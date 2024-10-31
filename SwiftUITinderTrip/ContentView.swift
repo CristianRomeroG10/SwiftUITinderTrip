@@ -52,13 +52,26 @@ struct ContentView: View {
         return index == 0
     }
     
-    var cardViews: [CardView] = {
+    @State var cardViews: [CardView] = {
         var views = [CardView]()
         for index in 0..<2 {
-            views.append(CardView(image: trips[index].image, title: trips[index].destination))
+            views.append(CardView(image: trips[index].image, title: trips[index].destination
+                                 )
+            )
         }
         return views
     }()
+    
+    @State private var lastIndex = 1
+    
+    private func moveCard(){
+        cardViews.removeFirst()
+        self.lastIndex += 1
+        let trip = trips[lastIndex % trips.count]
+        
+        let newcardView = CardView(image: trip.image, title: trip.destination)
+        cardViews.append(newcardView)
+    }
     var body: some View {
         VStack {
             TopBarMenu()
@@ -95,6 +108,14 @@ struct ContentView: View {
                                     break
                                 }
                             })
+                                .onEnded({ (value) in
+                                    guard case .second(true, let drag?) = value else {
+                                        return
+                                    }
+                                    if drag.translation.width < -self.dragThereshold || drag.translation.width > self.dragThereshold {
+                                        self.moveCard()
+                                    }
+                                })
                         )
                 }
             }
