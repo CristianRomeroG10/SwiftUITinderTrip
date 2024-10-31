@@ -43,6 +43,7 @@ struct ContentView: View {
     }
     
     @GestureState private var dragState = DragState.inactive
+    private let dragThereshold: CGFloat = 80.0
     
     private func isTopCard(cardView: CardView)->Bool{
         guard let index = cardViews.firstIndex(where: { $0.id == cardView.id }) else {
@@ -65,6 +66,19 @@ struct ContentView: View {
                 ForEach(cardViews){ cardView in
                     cardView
                         .zIndex(self.isTopCard(cardView: cardView) ? 1 : 0)
+                        .overlay{
+                            ZStack {
+                                Image(systemName: "x.circle")
+                                    .foregroundColor(.red)
+                                    .font(.system(size:100))
+                                    .opacity(self.dragState.translation.width < -self.dragThereshold && self.isTopCard(cardView: cardView) ? 1.0 : 0)
+                                Image(systemName: "heart.circle")
+                                    .foregroundColor(.green)
+                                    .font(.system(size:100))
+                                    .opacity(self.dragState.translation.width > self.dragThereshold && self.isTopCard(cardView: cardView) ? 1.0 : 0)
+                                    
+                            }
+                        }
                         .offset(x: self.isTopCard(cardView: cardView) ? self.dragState.translation.width : 0, y:self.isTopCard(cardView: cardView) ? self.dragState.translation.height : 0)
                         .scaleEffect(self.dragState.isDragging && self.isTopCard(cardView: cardView) ? 0.95 : 1.0)
                         .rotationEffect(Angle(degrees:self.isTopCard(cardView: cardView) ? Double(self.dragState.translation.width / 10):0))
