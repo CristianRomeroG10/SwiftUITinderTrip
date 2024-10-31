@@ -63,6 +63,7 @@ struct ContentView: View {
     }()
     
     @State private var lastIndex = 1
+    @State private var removalTransition = AnyTransition.trailingBottom
     
     private func moveCard(){
         cardViews.removeFirst()
@@ -95,6 +96,7 @@ struct ContentView: View {
                         .offset(x: self.isTopCard(cardView: cardView) ? self.dragState.translation.width : 0, y:self.isTopCard(cardView: cardView) ? self.dragState.translation.height : 0)
                         .scaleEffect(self.dragState.isDragging && self.isTopCard(cardView: cardView) ? 0.95 : 1.0)
                         .rotationEffect(Angle(degrees:self.isTopCard(cardView: cardView) ? Double(self.dragState.translation.width / 10):0))
+                        .transition(self.removalTransition)
                         .animation(.interpolatingSpring(stiffness: 180, damping: 100), value: self.dragState.translation)
                         .gesture(LongPressGesture(minimumDuration: 0.01)
                             .sequenced(before: DragGesture())
@@ -108,6 +110,17 @@ struct ContentView: View {
                                     break
                                 }
                             })
+                                .onChanged({ (value) in
+                                    guard case .second(true, let drag?) = value else {
+                                        return
+                                    }
+                                    if drag.translation.width < -self.dragThereshold {
+                                        self.removalTransition = .leadingBottom
+                                    }
+                                    if drag.translation.width > self.dragThereshold {
+                                        self.removalTransition = .trailingBottom
+                                    }
+                                })
                                 .onEnded({ (value) in
                                     guard case .second(true, let drag?) = value else {
                                         return
@@ -177,5 +190,22 @@ struct BottomBarMenu: View {
                 .font(.system(size: 30))
                 .foregroundStyle(.black)
         }
+    }
+}
+
+extension AnyTransition {
+    static var trailingBottom: AnyTransition {
+        AnyTransition.asymmetric(
+            insertion: .identity,
+            removal: AnyTransition.move(
+                edge: .trailing).combined(
+                    with: .move(edge: .bottom)))
+    }
+    static var leadingBottom: AnyTransition {
+        AnyTransition.asymmetric(
+            insertion: .identity,
+            removal: AnyTransition.move(
+                edge: .leading).combined(
+                    with: .move(edge: .bottom)))
     }
 }
